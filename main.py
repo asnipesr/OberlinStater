@@ -12,14 +12,12 @@
 
 import pygame
 import pygame.locals 
-import sys, os
 from button import button, text
 from datetime import date
-import csv
 import tkinter as tk
 from tkinter import simpledialog, messagebox
 from openpyxl import Workbook, load_workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Fill, Border, Side
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, numbers
 from pathlib import Path 
 from openpyxl.utils import get_column_letter
 from openpyxl.cell.cell import MergedCell
@@ -27,10 +25,6 @@ from openpyxl.cell.cell import MergedCell
 ROOT = tk.Tk()
 ROOT.withdraw()
 CONTINUE_WB = False
-
-def resource_path(rel_path: str) -> str:
-    base = getattr(sys, "_MEIPASS", os.path.abspath("."))
-    return os.path.join(base, rel_path)
 
 # Gets wanted filename
 today = date.today()
@@ -118,8 +112,8 @@ global curr
    
 # Sends stats to file and formats worksheet
 def send_to_file(stats, wb=None, sheet_name=""):
-    header = ["PLAYER","GOLD\n +3", "GOLD MISS\n -1", "SILVER\n +2", "SILVER MISS\n -1","BRONZE\n +1", "BRONZE MISS\n -1", "FTS\n +1", "AST\n +2", "VIKING AST\n +2", "TO\n -3", "PT\n +1", "OREB\n +2", "DREB\n +1", "REB", "STL\n +2", "BLK\n +2", "DEFL\n +1", "CHG/W-UP\n +3", "DRAW FL\n +1", "FOUL\n -1", "BLOW BY\n -1", "TEAM WIN\n +1", "TOTAL"]
-    multipliers = [3,-1,2,-1,1,-1,1,2,2,-3,1,2,1,0,2,2,1,3,1,-1,-1,1]
+    header = ["PLAYER","MADE THREES", "ATTEMPTS THREES", "PCT\nTHREES", "MADE MIDDY", "ATTEMPTS MIDDY", "PCT\nMIDDY", "MADE LAYUP", "ATTEMPTS LAYUP", "PCT\nLAYUP", "MADE\nFTs", "ATTEMPTS FTs", "PCT\nFTs", "AST", "OBIE AST", "TO", "OREB", "DREB", "REB", "STL", "BLK\nW-UP", "DEFL", "BLOW BY\nMADE IN FACE", "BAD ROTATION", "DRAW FL", "FOUL", "TEAM WIN"]
+    # multipliers = [3,-1,2,-1,1,-1,1,2,2,-3,1,2,1,0,2,2,1,3,1,-1,-1,1]
     
     # Create workbook if none exists (doesn't want to append)
     if wb is None:
@@ -137,183 +131,156 @@ def send_to_file(stats, wb=None, sheet_name=""):
                     cell.value = None
     else:
         ws = wb.create_sheet(title=sheet_name)
+        
+    NUMBER_OF_STATS = len(header) - 1
+    EXTRA_ROWS = 1 # PLAYER NAME
+    col_letter = get_column_letter(NUMBER_OF_STATS + EXTRA_ROWS) 
     
     # Generate Top Header
-    ws.merge_cells("A1:X1")
+    ws.merge_cells(f"A1:{col_letter}1")
     ws['A1'] = "Oberlin College Basketball"
     ws['A1'].font = Font(name=" Oswald", size=22, bold=True, color=("FFFFFF"))
     ws['A1'].fill = PatternFill(start_color="81192e", end_color="81192e",fill_type="solid")
     ws['A1'].alignment = Alignment(horizontal="center", vertical="center")
     
     # Generate secondary header
-    ws.merge_cells("A2:X2")
+    ws.merge_cells(f"A2:{col_letter}2")
     ws['A2'] = f"Oberlin Practice Stats - {today.month}/{today.day}"
     ws['A2'].font = Font(name="Oswald", size=16, bold=False, italic=True, color="000000")
     ws['A2'].fill = PatternFill(start_color="ffb800", end_color="ffb800",fill_type="solid")
     ws['A2'].alignment = Alignment(horizontal="center", vertical="center")
-    
-    # Create header with wanted statistics
-    header_font = Font(name="Oswald", bold=True, italic=True, color="FFFFFF")
-    header_fill = PatternFill(start_color="000000", end_color="000000", fill_type="solid")
-    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    
-    ## Re"draws" statistic headers every update
+
+    # Formats Header Row 
     start_header_row = 3
+    ws.row_dimensions[3].height = 38.00
     for col_index, value in enumerate(header, start=1):
         cell = ws.cell(row=start_header_row, column=col_index, value=value)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = header_alignment
+        cell.font = Font(name="Oswald", bold=True, italic=True, color="FFFFFF")
+        cell.fill = PatternFill(start_color="000000", end_color="000000", fill_type="solid")
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = Border(bottom=Side(style="thin", color="000000"))
+
         
+    # Formats Bottom Row
+    ws.merge_cells(f"A{ROSTER_SIZE+4}:{col_letter}{ROSTER_SIZE+4}")
+    ws[f'A{4+ROSTER_SIZE}'].fill = PatternFill(start_color="000000", end_color="000000", fill_type="solid")
+    ws.row_dimensions[4 + ROSTER_SIZE].height = 26.00
+    
+    # ----- PLAYER ROWS -----
     # Generates rows of player statistic data
     player_rows = []
     for person in stats.keys():
         values = stats[person] 
-        total = 0
-        for a,b in zip(stats[person], multipliers):
-            total += int(a) * b
-        row_data = [person] + values + [total]
+        row_data = [person] + values
         player_rows.append(row_data)
         
     # Generates row for player if they are not already on the board
-    NUMBER_OF_STATS = 22
-    EXTRA_ROWS = 2 # PLAYER NAME and TOTAL rows
     for player in players:
         name = player["name"]
         if name not in stats:
             zero_stats = [0] * NUMBER_OF_STATS
-            total = 0  
-            row_data = [name] + zero_stats + [total]
+            row_data = [name] + zero_stats
             player_rows.append(row_data)
     
-    # Sorts the players by first name and paste it to worksheet
+    # Sorts the players by first name 
     player_rows.sort(key=lambda row:row[0])
     start_row = 4
     for r_index, row in enumerate(player_rows, start=start_row):
         for c_index, value in enumerate(row, start=1):
             ws.cell(row=r_index, column=c_index, value=value)   
-    
-    # Styling for Rows and text
+        
+    # Styles and Formats Statistics Cells
+    # Gives different shades for cells in every other row
     for r in range(4, 4+ROSTER_SIZE):
         ws[f"A{r}"].font = Font(name="Oswald", size=12)
         ws[f"A{r}"].alignment = Alignment(vertical="center")
-        col_letter = get_column_letter(NUMBER_OF_STATS + EXTRA_ROWS) ## +2 is player name and total rows
-        ws[f"{col_letter}{r}"].font = Font(size=12, name="Oswald", bold=True)
-        ws[f"{col_letter}{r}"].alignment = Alignment(horizontal="center", vertical="center") 
-        ws[f"{col_letter}{r}"].border = Border(left=Side(style="thick", color="000000"), bottom=Side(style="thin", color="000000"), right=Side(style="thin", color="000000"))
-        
-    
-    for r in range(4, 4+ROSTER_SIZE):
-        for c in range(2, len(header)):
+        ws.row_dimensions[r].height = 22.00
+        if r % 2 == 1:
+            ws[f"A{r}"].fill = PatternFill(start_color="efefef", end_color="efefef", fill_type="solid")
+        for c in range(2, len(header)+1):
             cell = ws.cell(row=r, column=c)
             cell.font = Font(name="Oswald", size=12)
             cell.alignment = Alignment(horizontal="center", vertical="center")
-    
-    for r in range(5, 4+ROSTER_SIZE, 2):
-        for c in range(1, len(header)+1):
-            cell = ws.cell(row=r, column=c)
-            cell.fill = PatternFill(start_color="efefef", end_color="efefef", fill_type="solid")
-    
-    for r in range(4, 4+ROSTER_SIZE):
-        for c in range(1, len(header)):       
-            cell = ws.cell(row=r, column=c) 
             cell.border = Border(right=Side(style="thin", color="000000"), bottom=Side(style="thin", color="000000")) 
-            
-    ws.merge_cells(f"A{ROSTER_SIZE+4}:{col_letter}{ROSTER_SIZE+4}")
-    ws[f'A{4+ROSTER_SIZE}'].fill = PatternFill(start_color="000000", end_color="000000", fill_type="solid")
-    ws.row_dimensions[4 + ROSTER_SIZE].height = 26.00
-    ws.row_dimensions[3].height = 38.00
+            if r % 2 == 1:
+                cell.fill = PatternFill(start_color="efefef", end_color="efefef", fill_type="solid")
+        ws[f"A{r}"].border = Border(right=Side(style="thick", color="000000"), bottom=Side(style="thin", color="000000"))
 
+    # Styles and Colors Percentage Rows
+    for r in range(4, 4+ROSTER_SIZE):
+        for c in range(2, len(header)+1):
+            col_letter = get_column_letter(c)
+            cell = ws.cell(row=r, column=c)
+            
+            # --- THREE POINT PERCENTAGE ---
+            if col_letter == 'D':
+                if cell.value > .35:
+                    cell.font = Font(color="00C409")
+                elif cell.value <= .35 and cell.value > .3:
+                    cell.font = Font(color="E6A61B")
+                else:
+                    cell.font = Font(color="FF0000")
+                    
+                cell.number_format = numbers.FORMAT_PERCENTAGE_00
+                cell.border = Border(right=Side(style="thick", color="000000"), bottom=Side(style="thin", color="000000"))
+            
+            # --- MID RANGE PERCENTAGE ---
+            elif col_letter == 'G':
+                if cell.value > .45:
+                    cell.font = Font(color="00C409")
+                elif cell.value <= .45 and cell.value > .4:
+                    cell.font = Font(color="E6A61B")
+                else:
+                    cell.font = Font(color="FF0000")
+                cell.number_format = numbers.FORMAT_PERCENTAGE_00
+                cell.border = Border(right=Side(style="thick", color="000000"), bottom=Side(style="thin", color="000000"))
+                
+            # --- LAYUP PERCENTAGE ---
+            elif col_letter == 'J':
+                if cell.value > .65:
+                    cell.font = Font(color="00C409")
+                elif cell.value <= .65 and cell.value > .50:
+                    cell.font = Font(color="E6A61B")
+                else:
+                    cell.font = Font(color="FF0000")
+                cell.number_format = numbers.FORMAT_PERCENTAGE_00
+                cell.border = Border(right=Side(style="thick", color="000000"), bottom=Side(style="thin", color="000000"))
+                
+            # --- FREE THROW PERCENTAGE ---
+            elif col_letter == 'M':
+                if cell.value > .80:
+                    cell.font = Font(color="00C409")
+                elif cell.value <= .80 and cell.value > .70:
+                    cell.font = Font(color="E6A61B")
+                else:
+                    cell.font = Font(color="FF0000")
+                cell.number_format = numbers.FORMAT_PERCENTAGE_00
+                cell.border = Border(right=Side(style="thick", color="000000"), bottom=Side(style="thin", color="000000"))
+                
+            elif col_letter == 'P' or col_letter == 'S':
+                cell.border = Border(right=Side(style="thick", color="000000"), bottom=Side(style="thin", color="000000"))
+                    
+            
             
     # Spaces cells width and height correctly  
     OFFSET = 0.83
     for col in ws.columns:
         column = get_column_letter(col[0].column)  # Convert 1 -> 'A', etc.
         if column == 'A':
-            ws.column_dimensions[column].width = 16.00 + OFFSET
-        elif column == 'E':
-            ws.column_dimensions[column].width = 10.00 + OFFSET
-        elif column == 'G':
-            ws.column_dimensions[column].width = 10.50 + OFFSET
-        elif column == 'O':
+            ws.column_dimensions[column].width = 16.00 + OFFSET 
+        elif column == 'S':
             ws.column_dimensions[column].width = 5.00 + OFFSET
+        elif column == 'W':
+            ws.column_dimensions[column].width = 11.00 + OFFSET
+        elif column > 'A' and column <= 'M' or column == "X" or column == "U": 
+            ws.column_dimensions[column].width = 8.00 + OFFSET   
+        elif column == 'AA':
+            ws.column_dimensions[column].width = 7.00 + OFFSET  
         else:
-            ws.column_dimensions[column].width = 9.00 + OFFSET
-        
-    
-    for row in range(4, 4 + ROSTER_SIZE):
-        ws.row_dimensions[row].height = 22.00
+            ws.column_dimensions[column].width = 7.00 + OFFSET  
     
     wb.save(file_name)
     
-    
-# "WIN" ,"FGM", "FGA", "3PM", "3PA", "AST", "ORB", "DRB","STL","BLK","TOV"]
-# "GOLD", "SILVER", "BRONZE", "FTS", "AST", "TO", "PT", "OREB", "DREB", "REB", "STL", "BLK", "DEFL", "CHG/W-UP", "DRAW FL", "FOUL", "BLOW BY" "TEAM WIN", 
-def GOLD():
-    global curr
-    curr = "GOLD"
-def GOLD_MISS():
-    global curr
-    curr = "GOLD MISS"
-def SILVER():
-    global curr
-    curr = "SILVER"
-def SILVER_MiSS():
-    global curr
-    curr = "SILVER MISS"
-def BRONZE():
-    global curr
-    curr = "BRONZE"
-def BRONZE_MISS():
-    global curr
-    curr = "BRONZE MISS"
-def FTs():
-    global curr
-    curr = "FTs"
-def AST():
-    global curr
-    curr = "AST"
-def Viking_AST():
-    global curr
-    curr = "Viking_AST"
-def TOV():
-    global curr
-    curr = "TOV"
-def PT():
-    global curr
-    curr = "PT"
-def OREB():
-    global curr
-    curr = "OREB"
-def DREB():
-    global curr
-    curr = "DREB"
-def STL():
-    global curr
-    curr = "STL"
-def BLK():
-    global curr
-    curr = "BLK"
-def DEFL():
-    global curr
-    curr = "DEFL"
-def CHG_WUP():
-    global curr
-    curr = "CHG/W-UP"
-def DRAW_FL():
-    global curr
-    curr = "DRAW FOUL"
-def FOUL():
-    global curr
-    curr = "FOUL"
-def BLOW_BY():
-    global curr
-    curr = "BLOW BY"
-def WIN():
-    global curr
-    curr = "TEAM WIN"
-
-
 def find(lst, num):
     for dictionary in lst:
         if dictionary["number"] == num:
@@ -343,16 +310,204 @@ def Number(num):
     if name in stats:
         #print(stats_dict["index"])
         stats[name][stats_dict["index"]] += 1
-        if stats_dict["index"] == 11 or stats_dict["index"] == 12:
-            stats[name][13] += 1
+        if stats_dict["index"] == 15 or stats_dict["index"] == 16:
+            stats[name][17] += 1
+        
+        if stats_dict["index"] == 0 or stats_dict["index"] == 3 or stats_dict["index"] == 6 or stats_dict["index"] == 9:
+            stats[name][stats_dict["index"] + 1] += 1
+        
+        if stats_dict["index"] == 0 or stats_dict["index"] == 1:
+            stats[name][2] = stats[name][0] / stats[name][1]
+        elif stats_dict["index"] == 3 or stats_dict["index"] == 4:
+            stats[name][5] = stats[name][3] / stats[name][4]
+        elif stats_dict["index"] == 6 or stats_dict["index"] == 7:
+            stats[name][8] = stats[name][6] / stats[name][7]
+        elif stats_dict["index"] == 9 or stats_dict["index"] == 10:
+            stats[name][11] = stats[name][9] / stats[name][10]
     else:
-        stats[name] = [0]*22
+        stats[name] = [0] * 26
         stats[name][stats_dict["index"]] = 1
-        if stats_dict["index"] == 11 or stats_dict["index"] == 12:
-            stats[name][13] += 1
+        if stats_dict["index"] == 15 or stats_dict["index"] == 16:
+            stats[name][17] += 1
+            
+        if stats_dict["index"] == 0 or stats_dict["index"] == 3 or stats_dict["index"] == 6 or stats_dict["index"] == 9:
+            stats[name][stats_dict["index"] + 1] += 1
+        
+        if stats_dict["index"] == 0 or stats_dict["index"] == 1:
+            stats[name][2] = stats[name][0] / stats[name][1]
+        elif stats_dict["index"] == 3 or stats_dict["index"] == 4:
+            stats[name][5] = stats[name][3] / stats[name][4]
+        elif stats_dict["index"] == 6 or stats_dict["index"] == 7:
+            stats[name][8] = stats[name][6] / stats[name][7]
+        elif stats_dict["index"] == 9 or stats_dict["index"] == 10:
+            stats[name][11] = stats[name][9] / stats[name][10]
 
     print(name + " -- " + stats_dict["name"])
     save()
+    
+    
+# "WIN" ,"FGM", "FGA", "3PM", "3PA", "AST", "ORB", "DRB","STL","BLK","TOV"]
+# "M3", "M NR2", "RIM2", "FTS", "AST", "OBIE AST", "TO", "PT", "OREB", "DREB", "REB", "STL", "BLK_WUP", "DEFL", "DRAW FL", "FOUL", "BLOW BY", "TEAM WIN", "POSS"
+def MADE_THREE():
+    global curr
+    curr = "MADE THREE"
+def MISS_THREE():
+    global curr
+    curr = "MISSED THREE"
+def MADE_NR2():
+    global curr
+    curr = "MADE MIDDY"
+def MISS_NR2():
+    global curr
+    curr = "MISSED MIDDY"
+def MADE_R2():
+    global curr
+    curr = "MADE LAYUP"
+def MISS_R2():
+    global curr
+    curr = "MISSED LAYUP"
+def MADE_FTs():
+    global curr
+    curr = "MADE FT"
+def MISS_FTs():
+    global curr
+    curr = "MISSED FT"
+def AST():
+    global curr
+    curr = "AST"
+def Obie_AST():
+    global curr
+    curr = "OBIE AST"
+def TOV():
+    global curr
+    curr = "TOV"
+def OREB():
+    global curr
+    curr = "OREB"
+def DREB():
+    global curr
+    curr = "DREB"
+def STL():
+    global curr
+    curr = "STL"
+def BLK_WALLUP():
+    global curr
+    curr = "BLK/WALL-UP"
+def DEFL():
+    global curr
+    curr = "DEFL"
+def DRAW_FL():
+    global curr
+    curr = "DRAW FOUL"
+def FOUL():
+    global curr
+    curr = "FOUL"
+def BLOW_BY():
+    global curr
+    curr = "BLOW BY / MAKE IN FACE"
+def BAD_ROTATION():
+    global curr
+    curr = "BAD ROTATION"
+def WIN():
+    global curr
+    curr = "TEAM WIN"
+# def POSS():
+#     global curr
+#     curr = "POSS"
+
+# "M3", "M NR2", "RIM2", "FTS", "AST", "OBIE AST", "TO", "PT", "OREB", "DREB", "REB", "STL", "BLK_WUP", "DEFL", "DRAW FL", "FOUL", "BLOW BY", "TEAM WIN", "POSS"
+options = [
+    { "name" : "MADE THREE",
+      "function": MADE_THREE,
+      "index": 0
+    },
+    { "name" : "MISSED THREE",
+      "function": MISS_THREE,
+      "index": 1
+    },
+    { "name" : "MADE MIDDY",
+      "function": MADE_NR2,
+      "index": 3
+    },
+    { "name" : "MISSED MIDDY",
+      "function": MISS_NR2,
+      "index": 4
+    },
+    { "name" : "MADE LAYUP",
+      "function": MADE_R2,
+      "index": 6
+    },
+    { "name" : "MISSED LAYUP",
+      "function": MISS_R2,
+      "index": 7
+    },
+    { "name" : "MADE FT",
+      "function": MADE_FTs,
+      "index": 9
+    },
+    { "name" : "MISSED FT",
+      "function": MISS_FTs,
+      "index": 10
+    },
+    { "name" : "AST",
+      "function": AST,
+      "index": 12
+    },
+    { "name" : "OBIE AST",
+      "function": Obie_AST,
+      "index": 13
+    },
+    { "name" : "TOV",
+      "function": TOV,
+      "index": 14
+    },
+    { "name" : "OREB",
+      "function": OREB,
+      "index": 15
+    },
+    { "name" : "DREB",
+      "function": DREB,
+      "index": 16
+    },
+    #total rebounds is index 17
+    { "name" : "STL",
+      "function": STL,
+      "index": 18
+    },
+    { "name" : "BLK/WALL-UP",
+      "function": BLK_WALLUP,
+      "index": 19
+    },
+    { "name" : "DEFL",
+      "function": DEFL,
+      "index": 20
+    },
+    { "name" : "BLOW BY / MAKE IN FACE",
+      "function": BLOW_BY,
+      "index": 21
+    },
+    { "name" : "BAD ROTATION",
+      "function": BAD_ROTATION,
+      "index": 22
+    },
+    { "name" : "DRAW FOUL",
+      "function": DRAW_FL,
+      "index": 23
+    },
+    { "name" : "FOUL",
+      "function": FOUL,
+      "index": 24
+    },
+    { "name" : "TEAM WIN",
+      "function": WIN,
+      "index": 25
+    }
+    # ,
+    # { "name" : "POSS",
+    #   "function": POSS,
+    #   "index": 26
+    # }
+]
 
 players = [
     {"number": "0",
@@ -370,6 +525,7 @@ players = [
      "nickname": "Alasan",
      "function": Number,
      "name": "Alasan Njie-Morgan",
+     "img": "./players/3alasan.jpg",
     },
     {"number": "4",
      "nickname": "Liam",
@@ -462,95 +618,6 @@ players = [
      "function": Number,
      "name": "Samuel Kamenko",
     },
-]
-# "GOLD", "SILVER", "BRONZE", "FTS", "AST", "TO", "PT", "OREB", "DREB", "REB", "STL", "BLK", "DEFL", "CHG/W-UP", "DRAW FL", "FOUL", "BLOW BY" "TEAM WIN", 
-
-options = [
-    { "name" : "GOLD",
-      "function": GOLD,
-      "index": 0
-    },
-    { "name" : "GOLD MISS",
-      "function": GOLD_MISS,
-      "index": 1
-    },
-    { "name" : "SILVER",
-      "function": SILVER,
-      "index": 2
-    },
-    { "name" : "SILVER MISS",
-      "function": SILVER_MiSS,
-      "index": 3
-    },
-    { "name" : "BRONZE",
-      "function": BRONZE,
-      "index": 4
-    },
-    { "name" : "BRONZE MISS",
-      "function": BRONZE_MISS,
-      "index": 5
-    },
-    { "name" : "FTs",
-      "function": FTs,
-      "index": 6
-    },
-    { "name" : "AST",
-      "function": AST,
-      "index": 7
-    },
-    { "name" : "Viking_AST",
-      "function": Viking_AST,
-      "index": 8
-    },
-    { "name" : "TOV",
-      "function": TOV,
-      "index": 9
-    },
-    { "name" : "PT",
-      "function": PT,
-      "index": 10
-    },
-    { "name" : "OREB",
-      "function": OREB,
-      "index": 11
-    },
-    { "name" : "DREB",
-      "function": DREB,
-      "index": 12
-    },
-    #total rebounds is index 13
-    { "name" : "STL",
-      "function": STL,
-      "index": 14
-    },
-    { "name" : "BLK",
-      "function": BLK,
-      "index": 15
-    },
-    { "name" : "DEFL",
-      "function": DEFL,
-      "index": 16
-    },
-    { "name" : "CHG/W-UP",
-      "function": CHG_WUP,
-      "index": 17
-    },
-    { "name" : "DRAW FOUL",
-      "function": DRAW_FL,
-      "index": 18
-    },
-    { "name" : "FOUL",
-      "function": FOUL,
-      "index": 19
-    },
-    { "name" : "BLOW BY",
-      "function": BLOW_BY,
-      "index": 20
-    },
-    { "name" : "TEAM WIN",
-      "function": WIN,
-      "index": 21
-    }
 ]
 
 button_list = []
