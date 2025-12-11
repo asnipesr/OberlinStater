@@ -21,6 +21,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, numbers
 from pathlib import Path 
 from openpyxl.utils import get_column_letter
 from openpyxl.cell.cell import MergedCell
+import os
 
 ROOT = tk.Tk()
 ROOT.withdraw()
@@ -75,6 +76,8 @@ if Path(file_name).is_file():
 # check it out
 print("Saving name", file_name)
 print("\n")
+
+messagebox.showinfo(title="Instructions", message="Stats won't save on every input anymore. Stats will only save at the end once quitting the statting application by hitting the red X in the top left corner.\nUse CMD+S to save at any time\nUse CMD+Z to undo last stat entry\nClick on a stat button, then click on a player button to record that stat for that player")
 
 #initializing pygame
 pygame.init()
@@ -343,7 +346,6 @@ def Number(num):
             stats[name][11] = stats[name][9] / stats[name][10]
 
     print(name + " -- " + stats_dict["name"])
-    save()
     
     
 # "WIN" ,"FGM", "FGA", "3PM", "3PA", "AST", "ORB", "DRB","STL","BLK","TOV"]
@@ -514,6 +516,7 @@ players = [
      "nickname": "Gus",
      "function": Number,
      "name": "Gus Donahue",
+     "img": "./players/0gus.jpg"
     },
     {"number": "1",
      "nickname": "ZB",
@@ -531,6 +534,7 @@ players = [
      "nickname": "Liam",
      "function": Number,
      "name": "Liam Gray",
+    "img": "./players/4liam.jpg"
     },
     {"number": "5",
      "nickname": "Matty Ice",
@@ -551,16 +555,19 @@ players = [
      "nickname": "Kyryl",
      "function": Number,
      "name": "Kyryl Streltsov",
+     "img": "./players/13kyryl.jpg"
     },
     {"number": "14",
      "nickname": "Matt",
      "function": Number,
      "name": "Matthew Callahan",
+     "img": "./players/14matt.jpg"
     },
     {"number": "15",
      "nickname": "Mo",
      "function": Number,
      "name": "Mouhamed Toure",
+     "img": "./players/15mo.jpg"
     },
     {"number": "20",
      "nickname": "JJ",
@@ -572,6 +579,7 @@ players = [
      "nickname": "Will",
      "function": Number,
      "name": "William Manfredi",
+     "img": "./players/21will.jpg"
     },
     {"number": "22",
      "nickname": "Shea",
@@ -595,11 +603,13 @@ players = [
      "nickname": "Noah",
      "function": Number,
      "name": "Noah Kim",
+     "img": "./players/30noah.jpg"
     },
     {"number": "33",
      "nickname": "Uros",
      "function": Number,
      "name": "Uros Petrusic",
+     "img": "./players/33uros.jpg"
     },
     {"number": "34",
      "nickname": "Dut",
@@ -617,6 +627,7 @@ players = [
      "nickname": "Sam",
      "function": Number,
      "name": "Samuel Kamenko",
+     "img": "./players/50sam.jpg"
     },
 ]
 
@@ -686,7 +697,7 @@ def save():
             send_to_file(stats,wb=wb,sheet_name=sheet_name)
         else:
             send_to_file(stats,sheet_name="Stat Sheet")
-        print("Saved")
+        print("\nSaved to ", file_name, "\nPath: ", os.getcwd())
 
 def new_game():
     stats = {}
@@ -696,6 +707,7 @@ while run:
     in_cycle = True
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            save()
             run = False
         elif event.type == pygame.KEYDOWN:
             if pygame.key.get_mods() & pygame.KMOD_META:
