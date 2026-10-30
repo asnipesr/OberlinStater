@@ -21,6 +21,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, numbers
 from pathlib import Path 
 from openpyxl.utils import get_column_letter
 from openpyxl.cell.cell import MergedCell
+from copy import copy
 import os
 
 ROOT = tk.Tk()
@@ -142,13 +143,13 @@ def send_to_file(stats, wb=None, sheet_name=""):
     # Generate Top Header
     ws.merge_cells(f"A1:{col_letter}1")
     ws['A1'] = "Oberlin College Basketball"
-    ws['A1'].font = Font(name=" Oswald", size=22, bold=True, color=("FFFFFF"))
+    ws['A1'].font = Font(name="Oswald", size=22, bold=True, color=("FFFFFF"))
     ws['A1'].fill = PatternFill(start_color="81192e", end_color="81192e",fill_type="solid")
     ws['A1'].alignment = Alignment(horizontal="center", vertical="center")
     
     # Generate secondary header
     ws.merge_cells(f"A2:{col_letter}2")
-    ws['A2'] = f"Oberlin Practice Stats - {today.month}/{today.day}"
+    ws['A2'] = f"Practice Stats - {today.month}/{today.day}"
     ws['A2'].font = Font(name="Oswald", size=16, bold=False, italic=True, color="000000")
     ws['A2'].fill = PatternFill(start_color="ffb800", end_color="ffb800",fill_type="solid")
     ws['A2'].alignment = Alignment(horizontal="center", vertical="center")
@@ -263,8 +264,130 @@ def send_to_file(stats, wb=None, sheet_name=""):
             elif col_letter == 'P' or col_letter == 'S':
                 cell.border = Border(right=Side(style="thick", color="000000"), bottom=Side(style="thin", color="000000"))
                     
-            
-            
+    # TEAM STATS  
+    # Generate Top Header
+    ws.merge_cells(f"D{4+ROSTER_SIZE+4}:K{4+ROSTER_SIZE+4}")
+    ws[f'D{4+ROSTER_SIZE+4}'] = "TEAM SHOT SUMMARY"
+    ws[f'D{4+ROSTER_SIZE+4}'].font = Font(name="Oswald", size=12, bold=True, italic=True, color=("FFFFFF"))
+    ws[f'D{4+ROSTER_SIZE+4}'].fill = PatternFill(start_color="000000", end_color="000000",fill_type="solid")
+    ws[f'D{4+ROSTER_SIZE+4}'].alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[4+ROSTER_SIZE+4].height = 28
+    
+    # Generate secondary headers
+    ws[f'D{4+ROSTER_SIZE+5}'] = "Threes"
+    ws[f'E{4+ROSTER_SIZE+5}'] = "Freq"
+    ws[f'F{4+ROSTER_SIZE+5}'] = "Middies"
+    ws[f'G{4+ROSTER_SIZE+5}'] = "Freq"
+    ws[f'H{4+ROSTER_SIZE+5}'] = "Rim"
+    ws[f'I{4+ROSTER_SIZE+5}'] = "Freq"
+    ws[f'J{4+ROSTER_SIZE+5}'] = "FT"
+    ws[f'K{4+ROSTER_SIZE+5}'] = "AST:TO"
+    
+    for row in ws[f'D{4+ROSTER_SIZE+5}:K{4+ROSTER_SIZE+5}']:
+        for cell in row:
+            cell.font = Font(name="Oswald", size=12, color="FFFFFF")
+    
+    # SHOTS
+    ws[f'D{4+ROSTER_SIZE+5}'].fill = PatternFill(start_color="81192e", end_color="81192e",fill_type="solid") # THREES
+    ws[f'F{4+ROSTER_SIZE+5}'].fill = PatternFill(start_color="81192e", end_color="81192e",fill_type="solid") # MIDDIES
+    ws[f'H{4+ROSTER_SIZE+5}'].fill = PatternFill(start_color="81192e", end_color="81192e",fill_type="solid") # RIM
+    ws[f'J{4+ROSTER_SIZE+5}'].fill = PatternFill(start_color="000000", end_color="000000",fill_type="solid") # FT
+    ws[f'K{4+ROSTER_SIZE+5}'].fill = PatternFill(start_color="C8409C", end_color="C8409C",fill_type="solid") # AST:TO
+    
+    # FREQ
+    ws[f'E{4+ROSTER_SIZE+5}'].fill = PatternFill(start_color="BFBFBF", end_color="BFBFBF",fill_type="solid")
+    ws[f'G{4+ROSTER_SIZE+5}'].fill = PatternFill(start_color="BFBFBF", end_color="BFBFBF",fill_type="solid")
+    ws[f'I{4+ROSTER_SIZE+5}'].fill = PatternFill(start_color="BFBFBF", end_color="BFBFBF",fill_type="solid")
+    
+    for row in range(4+ROSTER_SIZE+5, 4+ROSTER_SIZE+8):
+        for col in range(4, 12):
+            ws.cell(row=row, column=col).alignment = Alignment(
+                horizontal="center", vertical="center"
+        )   
+    
+    ws.row_dimensions[4+ROSTER_SIZE+5].height = 25
+    ws.row_dimensions[4+ROSTER_SIZE+6].height = 25
+    ws.row_dimensions[4+ROSTER_SIZE+7].height = 25
+    
+    # VALUES
+    ws[f'D{4+ROSTER_SIZE+6}'] = f'=SUM(B4:B{4+ROSTER_SIZE})&" / "&SUM(C4:C{4+ROSTER_SIZE})' # THREES
+    ws[f'E{4+ROSTER_SIZE+6}'] = f'=IFERROR(SUM(C4:C{4+ROSTER_SIZE})/(SUM(C4:C{4+ROSTER_SIZE})+SUM(F4:F{4+ROSTER_SIZE})+SUM(I4:I{4+ROSTER_SIZE})),"")'
+    ws[f'E{4+ROSTER_SIZE+6}'].number_format = '0%'
+    
+    ws[f'F{4+ROSTER_SIZE+6}'] = f'=SUM(E4:E{4+ROSTER_SIZE})&" / "&SUM(F4:F{4+ROSTER_SIZE})' # MIDDIES
+    ws[f'G{4+ROSTER_SIZE+6}'] = f'=IFERROR(SUM(F4:F{4+ROSTER_SIZE})/(SUM(C4:C{4+ROSTER_SIZE})+SUM(F4:F{4+ROSTER_SIZE})+SUM(I4:I{4+ROSTER_SIZE})),"")'
+    ws[f'G{4+ROSTER_SIZE+6}'].number_format = '0%'
+    
+    ws[f'H{4+ROSTER_SIZE+6}'] = f'=SUM(H4:H{4+ROSTER_SIZE})&" / "&SUM(I4:I{4+ROSTER_SIZE})' # RIM
+    ws[f'I{4+ROSTER_SIZE+6}'] = f'=IFERROR(SUM(I4:I{4+ROSTER_SIZE})/(SUM(C4:C{4+ROSTER_SIZE})+SUM(F4:F{4+ROSTER_SIZE})+SUM(I4:I{4+ROSTER_SIZE})),"")'
+    ws[f'I{4+ROSTER_SIZE+6}'].number_format = '0%'
+    
+    
+    ws[f'J{4+ROSTER_SIZE+6}'] = f'=SUM(K4:K{4+ROSTER_SIZE})&" / "&SUM(L4:L{4+ROSTER_SIZE})' # FT
+    ws.merge_cells(f'K{4+ROSTER_SIZE+6}:K{4+ROSTER_SIZE+7}') # AST:TO
+    ws[f'K{4+ROSTER_SIZE+6}'] = f'=IF(SUM(P4:P{4+ROSTER_SIZE})=0,"-",ROUND(SUM(N4:N{4+ROSTER_SIZE})/SUM(P4:P{4+ROSTER_SIZE}), 2))'
+    
+    # PERCENTAGES
+    ws.merge_cells(f"D{4+ROSTER_SIZE+7}:E{4+ROSTER_SIZE+7}")
+    ws.merge_cells(f"F{4+ROSTER_SIZE+7}:G{4+ROSTER_SIZE+7}")
+    ws.merge_cells(f"H{4+ROSTER_SIZE+7}:I{4+ROSTER_SIZE+7}")
+    
+    ws[f'D{4+ROSTER_SIZE+7}'] = f'=IFERROR(SUM(B4:B{4+ROSTER_SIZE})/(SUM(C4:C{4+ROSTER_SIZE})),0)'
+    ws[f'D{4+ROSTER_SIZE+7}'].number_format = '0.00%'
+    
+    ws[f'F{4+ROSTER_SIZE+7}'] = f'=IFERROR(SUM(E4:E{4+ROSTER_SIZE})/(SUM(F4:F{4+ROSTER_SIZE})),0)'
+    ws[f'F{4+ROSTER_SIZE+7}'].number_format = '0.00%'
+    
+    ws[f'H{4+ROSTER_SIZE+7}'] = f'=IFERROR(SUM(H4:H{4+ROSTER_SIZE})/(SUM(I4:I{4+ROSTER_SIZE})),0)'
+    ws[f'H{4+ROSTER_SIZE+7}'].number_format = '0.00%'
+    
+    ws[f'J{4+ROSTER_SIZE+7}'] = f'=IFERROR(SUM(K4:K{4+ROSTER_SIZE})/(SUM(L4:L{4+ROSTER_SIZE})),0)'
+    ws[f'J{4+ROSTER_SIZE+7}'].number_format = '0.00%'
+
+    
+    for row in range(4+ROSTER_SIZE+6, 4+ROSTER_SIZE+8):
+        for col in range(4, 12):  # D through K
+            ws.cell(row=row, column=col).font = Font(
+                name='Calibri (Body)',
+                size=13 if row == 4+ROSTER_SIZE+6 else 11,
+                color='000000'
+        )
+
+    # BORDERS
+    start_row = 4 + ROSTER_SIZE + 4
+    end_row = 4 + ROSTER_SIZE + 7
+
+    def set_border(cell, **kwargs):
+        border = copy(cell.border)
+        for side, value in kwargs.items():
+            setattr(border, side, Side(style=value, color="000000"))
+        cell.border = border
+
+    # Thick left and right outside borders
+    for row_num in range(start_row, end_row + 1):
+        set_border(ws[f'D{row_num}'], left="thick")
+        set_border(ws[f'K{row_num}'], right="thick")
+
+    # Inner borders and thin horizontal borders
+    for row_num in range(start_row + 1, end_row):
+        for col in "DEFGHIJK":
+            cell = ws[f'{col}{row_num}']
+
+            if col in "DFH":
+                set_border(cell, right="thin", bottom="thin")
+            elif col in "EGIJ":
+                set_border(cell, right="thick", bottom="thin")
+            else:
+                set_border(cell, bottom="thin")
+
+    # Bottom row: thick bottom across ALL columns D through K
+    for col in "DEFGHIJK":
+        set_border(ws[f'{col}{end_row}'], bottom="thick")
+
+    # Extend thick vertical dividers through bottom row
+    for col in "EGIJ":
+        set_border(ws[f'{col}{end_row}'], right="thick")
+        
     # Spaces cells width and height correctly  
     OFFSET = 0.83
     for col in ws.columns:
@@ -280,7 +403,9 @@ def send_to_file(stats, wb=None, sheet_name=""):
         elif column == 'AA':
             ws.column_dimensions[column].width = 7.00 + OFFSET  
         else:
-            ws.column_dimensions[column].width = 7.00 + OFFSET  
+            ws.column_dimensions[column].width = 7.00 + OFFSET 
+            
+     
     
     wb.save(file_name)
     
@@ -567,7 +692,7 @@ players = [
      "nickname": "Matt",
      "function": Number,
      "name": "Matthew Callahan",
-     "img": "./players/14matt.jpg"
+     "img": "./players/14callahan.jpg"
     },
     {"number": "15",
      "nickname": "Mo",
