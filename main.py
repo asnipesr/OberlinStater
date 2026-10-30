@@ -85,7 +85,7 @@ pygame.init()
 #setting screen width and height
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 800
-ROSTER_SIZE = 20
+ROSTER_SIZE = 17
 
 #creating game window
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -513,49 +513,55 @@ options = [
 
 players = [
     {"number": "0",
-     "nickname": "Gus",
+     "nickname": "Grunny",
      "function": Number,
      "name": "Gus Donahue",
      "img": "./players/0gus.jpg"
     },
     {"number": "1",
-     "nickname": "ZB",
-     "function": Number,
-     "name": "Zach Bronson",
-     "img": "./players/1zach.jpg"
-     },
-    {"number": "3",
-     "nickname": "Alasan",
-     "function": Number,
-     "name": "Alasan Njie-Morgan",
-     "img": "./players/3alasan.jpg",
-    },
-    {"number": "4",
-     "nickname": "Liam",
+     "nickname": "Russell",
      "function": Number,
      "name": "Liam Gray",
-    "img": "./players/4liam.jpg"
+     "img": "./players/1liam.jpg"
+     },
+    {"number": "2",
+     "nickname": "Bailey",
+     "function": Number,
+     "name": "Bailey Abare",
+     "img": "./players/2abare.jpg",
+    },
+    {"number": "4",
+     "nickname": "Aaron",
+     "function": Number,
+     "name": "Aaron Heinze",
+    "img": "./players/4heinze.jpg"
     },
     {"number": "5",
-     "nickname": "Matty Ice",
+     "nickname": "M5",
      "function": Number,
      "name": "Matt Andreopolous",
      "img": "./players/5matt.jpg"},
     {"number": "10",
-     "nickname": "Nav",
+     "nickname": "Uros",
      "function": Number,
-     "name": "Adam Navarre",
-     "img": "./players/10adam.jpg"},
-    {"number": "12",
-     "nickname": "Smitty",
-     "function": Number,
-     "name": "Zach Smith",
-     "img": "./players/12smitty.jpg"},
-    {"number": "13",
+     "name": "Uros Petrusic",
+     "img": "./players/10uros.jpg"},
+    {"number": "11",
      "nickname": "Kyryl",
      "function": Number,
      "name": "Kyryl Streltsov",
-     "img": "./players/13kyryl.jpg"
+     "img": "./players/11kyryl.jpg"},
+    {"number": "12",
+     "nickname": "Chip",
+     "function": Number,
+     "name": "Chip Ravenell",
+     "img": "./players/12chip.jpg"
+    },
+    {"number": "13",
+    "nickname": "Sutton",
+    "function": Number,
+    "name": "Sutton Lasley",
+    "img": "./players/13lasley.jpg"
     },
     {"number": "14",
      "nickname": "Matt",
@@ -569,59 +575,35 @@ players = [
      "name": "Mouhamed Toure",
      "img": "./players/15mo.jpg"
     },
-    {"number": "20",
-     "nickname": "JJ",
-     "function": Number,
-     "name": "JJ Gray",
-     "img": "./players/20jj.jpg"
-     },
-    {"number": "21",
+    {"number": "22",
      "nickname": "Will",
      "function": Number,
      "name": "William Manfredi",
-     "img": "./players/21will.jpg"
+     "img": "./players/22will.jpg"
     },
-    {"number": "22",
-     "nickname": "Shea",
-     "function": Number,
-     "name": "Shea Laursen",
-     "img": "./players/22shea.jpg"
-     },
     {"number": "23",
      "nickname": "Rob",
      "function": Number,
      "name": "Rob Magner",
      "img": "./players/23rob.jpg"
      },
-    {"number": "24",
-     "nickname": "JRen",
-     "function": Number,
-     "name": "Jackson Reynolds",
-     "img": "./players/24jackson.jpg"
-     },
     {"number": "30",
      "nickname": "Noah",
      "function": Number,
      "name": "Noah Kim",
-     "img": "./players/30noah.jpg"
+     "img": "./players/30kim.jpg"
     },
     {"number": "33",
-     "nickname": "Uros",
+     "nickname": "Layne",
      "function": Number,
-     "name": "Uros Petrusic",
-     "img": "./players/33uros.jpg"
+     "name": "Layne Broker",
+     "img": "./players/33broker.jpg"
     },
-    {"number": "34",
-     "nickname": "Dut",
+    {"number": "44",
+     "nickname": "Sebastian",
      "function": Number,
-     "name": "Dut Lual",
-     "img": "./players/34dut.jpg"
-    },
-    {"number": "35",
-     "nickname": "Milun",
-     "function": Number,
-     "name": "Milun Micanovic",
-     "img": "./players/35milun.jpg"
+     "name": "Sebastian Margate",
+     "img": "./players/44margate.jpg"
     },
     {"number": "50",
      "nickname": "Sam",
